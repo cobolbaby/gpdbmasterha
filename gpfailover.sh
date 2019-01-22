@@ -18,18 +18,19 @@ pingCheck(){
 }
 
 psqlCheck(){
-    SERVICE_CHECK=`ssh gpadmin@$1 "source /usr/local/greenplum-db/greenplum_path.sh ; psql -U gpadmin -d postgres -c 'ANALYZE;'"`
-    if [ $SERVICE_CHECK != "ANALYZE" ]; then
-        echo "Greenplum service gone away"
+    ssh gpadmin@$1 "source /usr/local/greenplum-db/greenplum_path.sh ; psql -U gpadmin -d postgres -c 'ANALYZE;'"
+    if [ $? -ne 0 ]; then
+        # psql: FATAL:  the database system is starting up
+        echo "Greenplum $1 node gone away"
         return 2
     fi
     return 0
 }
 
 switchStandby(){
-    # gpactivatestandby:smdw:gpadmin-[CRITICAL]:-PGPORT environment variable not set
     ssh gpadmin@${GPSMDW} "source /usr/local/greenplum-db/greenplum_path.sh; export MASTER_DATA_DIRECTORY=${MASTER_DATA_DIRECTORY}; export PGPORT=5432; gpactivatestandby -a -d ${MASTER_DATA_DIRECTORY}"
     if [ $? -ne 0 ]; then
+        # gpactivatestandby:smdw:gpadmin-[CRITICAL]:-PGPORT environment variable not set
         echo "Failed to gpactivatestandby"
         return 5
     fi
@@ -69,9 +70,3 @@ pingCheck ${GPSMDW} || exit 1
 psqlCheck ${GPSMDW} || (switchStandby && checkStandbySwitch) || exit 4
 
 exit 0
-
-# ping: mdw: Name or service not known
-# Conldn't ping gpdb mdw node
-# psql: FATAL:  the database system is starting up
-# ./gpfailover.sh: line 22: [: !=: unary operator expected
-# gpfailover exit code: 0
