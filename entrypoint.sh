@@ -13,5 +13,5 @@ do
     sshpass -p "gpadmin" ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa.pub gpadmin@$host
 done
 
-while true; do sleep 60; ./gpfailover.sh; echo "gpfailover exit code: $?"; done
+while true; do sleep 60; ./gpfailover.sh; done
 
